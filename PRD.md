@@ -1,79 +1,53 @@
-# PRD — AI-Powered Underground Mine Safety, Monitoring and Rescue System
-
-**Problem Statement ID:** SIH26039
-**Category:** Govt. of Jharkhand — Hardware/Software (IoT + AI)
-**Team Size:** 3 members
-
----
+# ResQ Mine — Product Requirements Document
 
 ## 1. Problem Statement
+Underground coal and mineral mines in India largely lack affordable, real-time environmental and structural monitoring. Existing commercial systems (Trolex, Newtrax, Strata Worldwide) work well but are cost-prohibitive for small and mid-sized mines, leaving workers exposed to undetected hazards — gas buildup, structural instability, water ingress — until an incident has already happened. SIH26039 calls for an AI-powered monitoring and rescue-coordination system that addresses this gap.
 
-Underground mines lack real-time, low-cost hazard monitoring. Gas leaks, structural
-instability (rockfall/subsidence), water ingress, and worker safety incidents are
-often detected too late, causing casualties. Existing commercial solutions
-(Trolex, Newtrax, Strata Worldwide) are expensive, certified, and out of reach for
-smaller/tier-2 Indian mines.
+## 2. What We're Building (This Phase)
+This document scopes the **software stack only** — backend, simulation layer, dashboard, and alerting. Physical hardware (the ESP32 sensor node) is being built on a separate track and will plug into this system through the same MQTT contract once it's ready. The two tracks are designed to be independent until the final merge.
 
-## 2. Goal (What We're Actually Building)
+## 3. Goals
+- Ingest sensor telemetry (real or simulated) over MQTT
+- Detect anomalous conditions using an explainable, threshold/z-score based rule engine — not a black-box model
+- Push live status to a web dashboard with zone-level risk visualization
+- Trigger an SMS alert to a control-room number when risk crosses a defined threshold
+- Demonstrate the concept scaling across multiple mine zones without needing multiple physical sensor deployments, via a simulation layer
 
-A **low-cost, ESP32-based proof-of-concept** that senses key underground hazard
-signals, runs simple explainable anomaly detection, and triggers dual-channel
-alerts (dashboard + SMS) — demonstrating that meaningful mine safety monitoring
-doesn't require expensive certified hardware to prototype and validate the concept.
+## 4. Non-Goals (Explicitly Out of Scope)
+- Machine-learning based anomaly detection (isolation forest / LSTM) — noted as future roadmap, not required for MVP credibility
+- LoRa or any non-WiFi communication layer
+- Intrinsically-safe / ATEX hardware certification
+- Multi-tenant or multi-mine account system
+- Native mobile app
+- User authentication beyond a single control-room login, if time allows
 
-**This is explicitly a PoC, not a certified production system.** Real deployment
-would require intrinsically-safe (ATEX) certified hardware and DGMS compliance —
-this is called out as future work, not hidden.
+## 5. Target User
+A mine safety control-room operator monitoring one mine site with several underground zones.
 
-## 3. Users / Stakeholders
-
-- **Mine control room operator** — watches the live dashboard, receives alerts
-- **Underground worker** — carries/benefits from the wearable safety node (future scope)
-- **Rescue team** — receives SMS/dispatch alerts on critical anomaly
-
-## 4. Core Features (MVP scope — see `phases.md` for full breakdown)
-
+## 6. Core Features (MVP)
 | # | Feature | Priority |
-|---|---------|----------|
-| 1 | Single ESP32 sensor node (vibration, temp/humidity, water, sound) | Must-have |
-| 2 | MQTT telemetry → backend ingestion | Must-have |
-| 3 | Threshold/z-score based anomaly detection (explainable) | Must-have |
-| 4 | Live React dashboard (status per zone, color-coded risk) | Must-have |
-| 5 | Simulated multi-zone data (Python script feeding same MQTT topic pattern) | Must-have |
-| 6 | SMS alert on critical anomaly (SIM800L or Twilio) | Must-have |
-| 7 | Local SD card logging (offline resilience) | Should-have |
-| 8 | Servo-actuated barrier/vent demo | Nice-to-have |
-| 9 | Worker wearable node (PIR, panic button) | Future scope |
-| 10 | LoRa mesh comms | Future scope (mention only) |
+|---|---|---|
+| 1 | MQTT ingestion of sensor readings | P0 |
+| 2 | Time-series storage in MongoDB | P0 |
+| 3 | Rule-based anomaly scoring per zone | P0 |
+| 4 | Real-time dashboard (Socket.io push) | P0 |
+| 5 | SMS alert on critical threshold breach | P0 |
+| 6 | Simulated multi-zone data generator | P0 |
+| 7 | Alert history log | P1 |
+| 8 | Historical sensor graphs | P1 |
+| 9 | Servo/actuation trigger endpoint (stub for hardware) | P2 |
 
-## 5. Success Criteria (for the hackathon demo)
+## 7. Success Criteria for Demo
+- Dashboard shows 4–5 zones with live-updating status colors
+- Injecting a simulated anomaly visibly changes a zone to "critical" within 2–3 seconds
+- An SMS lands on a real phone during the anomaly demo
+- The system recovers gracefully if the MQTT connection drops and reconnects
 
-- Live sensor data visibly flows from physical ESP32 → dashboard in real time
-- A manually triggered anomaly (e.g., shaking the board) produces a visible
-  dashboard alert **and** an SMS within a few seconds
-- Judges can be shown the exact threshold/logic that caused the alert
-  (explainability)
-- Simulated zones behave consistently with the real node's data pattern
+## 8. Assumptions
+- One shared MQTT broker (HiveMQ Cloud free tier) serves both real hardware and simulated zones
+- Sensor data format is fixed and versioned (see `Backend-Schema.md`) so hardware and simulation stay compatible without coordination during the build
+- A single control-room phone number receives alerts — no dynamic recipient list in MVP
 
-## 6. Non-Goals (explicitly out of scope for this build)
-
-- Real underground deployment or certification
-- Multi-node physical mesh network
-- Machine-learning model training on real mine datasets (none available)
-- Long-term historical analytics / compliance reporting
-
-## 7. Known Constraints & Risks
-
-- No real mine data available → anomaly thresholds are based on published
-  safety standards (DGMS/OSHA-style limits) + statistical simulation, not
-  real sensor history — **must be stated honestly to judges**
-- WiFi/MQTT will not work in a real underground mine (no signal) — demo runs
-  on WiFi for simplicity; real deployment would need LoRa or wired backbone
-- Off-the-shelf ESP32 electronics are not intrinsically safe — cannot be used
-  near real methane-rich environments without certification
-
-## 8. Reused Assets
-
-- MQTT + sensor node pattern from **InfraGuard** (STPI x IIT Guwahati finalist)
-- GPS + SOS/SMS dispatch logic from **ResQ RoadSOS**
-- Glassmorphic dashboard UI pattern from **Smart Home Dashboard**
+## 9. Constraints
+- Built inside a hackathon window (~36 hours), by a 3-person team, two of whom own this software track
+- Reuse existing codebases wherever it saves time — backend patterns from ResQ RoadSOS, dashboard UI patterns from Smart Home Dashboard

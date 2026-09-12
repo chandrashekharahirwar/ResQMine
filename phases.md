@@ -1,62 +1,47 @@
-# Phases — SIH26039 Mine Safety System (36-Hour Build Plan)
+# ResQ Mine — Development Phases (Software Track)
 
-## Phase 0 — Setup (Hour 0–4)
-- Finalize architecture, create repo structure (firmware / backend / frontend / simulator)
-- Wire up ESP32 with core sensors (MPU6050, DHT11, rain, sound, ultrasonic)
-- Verify each sensor gives sane raw readings via Serial Monitor
-- Set up HiveMQ Cloud broker + test a basic publish/subscribe
-- **Owner:** Hardware/Firmware lead
+Scope: backend, simulation layer, dashboard, alerts, docs. Hardware is a separate track and merges in at Phase 4.
 
-## Phase 1 — Telemetry Pipeline (Hour 4–10)
-- ESP32 publishes real sensor JSON to MQTT topics
-- Node.js backend subscribes, parses, writes to MongoDB
-- Confirm end-to-end: sensor change on the board → new document in MongoDB
-- **Owner:** Backend/AI-ML lead
+## Phase 0 — Setup (Hour 0–2)
+- Repo scaffolding: `backend/`, `frontend/`, `simulation/`
+- HiveMQ Cloud broker provisioned, tested with a throwaway pub/sub script
+- MongoDB Atlas cluster provisioned, connection verified
+- Freeze the MQTT payload schema (`Backend-Schema.md`) — this is the one thing that must not change later, since the hardware track builds against it independently
 
-## Phase 2 — Anomaly Logic (Hour 10–18)
-- Implement rolling baseline (mean/std-dev) per sensor per zone
-- Implement z-score deviation check + weighted composite risk score
-- Implement sensor-fusion rule (2+ sensors must agree for "critical")
-- Unit-test with manually injected fake spikes
-- **Owner:** Backend/AI-ML lead
+## Phase 1 — Backend Core (Hour 2–8)
+- MQTT subscriber wired into the Express app
+- Reading validation and MongoDB write path
+- Risk scoring engine (per `TRT.md`)
+- Core REST endpoints: `/api/zones`, `/api/zones/:id/history`
 
-## Phase 3 — Dashboard (Hour 18–26)
-- Build React dashboard shell (glassmorphic theme)
-- Socket.io live updates wired to backend emit events
-- Zone cards with color-coded risk + alert log panel
-- Per-zone detail chart view
-- **Owner:** Frontend/Dashboard lead
+## Phase 2 — Simulation + Live Verification (Hour 6–10, overlaps Phase 1)
+- Simulation script publishing 4 zones on a schedule
+- Manual anomaly injection working via CLI flag or the demo endpoint
+- Confirm end to end: simulated reading → DB write → correct risk score
 
-## Phase 4 — Simulation Layer (parallel, Hour 10–20)
-- Python script publishing to `zone-2`, `zone-3` etc. with realistic baseline +
-  injected anomalies, on the same MQTT topic pattern
-- Confirm dashboard treats simulated zones identically to real zone (except badge)
-- **Owner:** Backend/AI-ML lead (can overlap with Phase 2)
+## Phase 3 — Frontend Dashboard (Hour 8–20)
+- Socket.io wired on both ends
+- Zone grid UI (per `UI-UX.md`)
+- Zone detail panel with the risk-factor breakdown
+- Alert log view
+- Connection-state handling: reconnect banner, stale-zone graying
 
-## Phase 5 — Alerting (Hour 20–28)
-- Wire SIM800L (AT commands) or Twilio for SMS dispatch on critical risk score
-- Test with a manual shake/trigger on the physical board → confirm SMS received
-- Add capacitor/voltage booster fix for SIM800L power stability
-- **Owner:** Hardware/Firmware lead + Backend lead (joint)
+## Phase 4 — Alerts + Hardware Merge (Hour 18–26)
+- Twilio SMS integration with rate limiting
+- If the hardware track's ESP32 node is ready, point it at the same broker and confirm it appears as a live zone alongside the simulated ones with zero backend changes
+- If hardware isn't ready yet, this phase proceeds fully on simulated data — the two tracks are independent by design (see `architecture.md`)
 
-## Phase 6 — End-to-End Testing (Hour 28–32)
-- Full run-through: shake board → dashboard alert → SMS, timed
-- Test WiFi drop/reconnect behavior on the ESP32
-- Test simulator + real node running simultaneously without topic collisions
-- Fix any timestamp/clock-drift issues (NTP sync)
-- **Owner:** Whole team
+## Phase 5 — Hardening + Demo Rehearsal (Hour 26–32)
+- Run the full pre-demo checklist from `TRT.md`
+- Rehearse the exact anomaly-injection demo sequence at least three times, timed
+- Prepare a fallback: if live hardware fails on stage, drop to a pure-simulation demo without missing a beat
 
-## Phase 7 — Polish & Pitch Prep (Hour 32–36)
-- UI polish pass (spacing, colors, labels)
-- Prepare pitch deck: problem framing, PoC honesty framing, roadmap slide
-  (LoRa, ATEX certification, DGMS compliance as future work)
-- Rehearse demo + prepare answers for judge Q&A (data verification, threshold
-  reasoning, decision logic — see Q&A notes)
-- **Owner:** Whole team
+## Phase 6 — Docs + Pitch (Hour 30–36)
+- README with the architecture diagram and setup steps
+- Slide deck: problem → solution → live demo → architecture → honest roadmap/limitations slide
+- Mock Q&A prep pass
 
----
-
-## Buffer Note
-Integration debugging historically takes longer than estimated — Phase 6 has
-built-in buffer, but if any earlier phase runs over, pull time from Phase 7's
-polish (not from Phase 6's end-to-end testing).
+## Role Split
+- **Backend/Data lead** — Phases 1, 2, and the alerting half of 4
+- **Frontend/Dashboard lead** — Phase 3, contributes to 5
+- **Hardware/Integration lead** — separate hardware track, joins for the Phase 4 merge, helps with Phase 6 docs

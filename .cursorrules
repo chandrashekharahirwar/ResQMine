@@ -1,0 +1,24 @@
+You are assisting on ResQ Mine, an underground mine safety monitoring system (SIH26039). This is a hackathon build — prioritize working, demonstrable code over premature abstraction.
+
+## Stack (do not suggest alternatives unless asked)
+- Backend: Node.js + Express, `mqtt` npm package, `socket.io`, MongoDB via `mongoose`
+- Frontend: React (functional components + hooks only, no class components), Tailwind CSS
+- Simulation: plain Node.js script, no framework
+- Alerts: Twilio Node SDK
+
+## Conventions
+- All MQTT topics follow `resqmine/{zoneId}/telemetry`. Never hardcode a zone ID anywhere else — read it from the payload.
+- Risk-scoring logic lives in a single module (`riskEngine.js`). Do not scatter threshold checks across route handlers.
+- Every MongoDB write validates the payload shape first and rejects/logs malformed data instead of throwing unhandled.
+- No ML libraries (no tensorflow, no scikit-learn). Anomaly detection is intentionally rule-based for this version — do not add ML unless explicitly asked.
+- Secrets (broker URL, Mongo URI, Twilio credentials) go in `.env`, never hardcoded. `.env` is gitignored.
+- Keep frontend components small and named after what they show (`ZoneCard`, `ZoneDetailPanel`, `AlertLog`) — not generic (`Card1`, `Panel`).
+- Comment sparingly, only where the *why* isn't obvious from the code (e.g. why a threshold value was chosen) — not restating what the code does line by line.
+- Do not add authentication, user accounts, or role-based access — explicitly out of scope for this build.
+- Do not add a LoRa/BLE/non-WiFi communication layer — MQTT over WiFi only, for this phase.
+
+## When generating code
+- Prefer async/await over raw promise chains.
+- Prefer small, focused functions over large multi-purpose ones.
+- If a request is ambiguous, default to the simplest version that satisfies `PRD.md`/`TRT.md` rather than asking — but flag the assumption in a one-line comment.
+- Do not invent new MQTT topics, DB fields, or API routes beyond what's defined in `Backend-Schema.md` and `TRT.md` without flagging it as a deviation.

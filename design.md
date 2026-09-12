@@ -1,101 +1,24 @@
-# Design — SIH26039 Mine Safety System
+# ResQ Mine — Design Decisions Log
 
-## 1. Design Principles
+Recorded here so any team member — or a judge who asks "why did you choose X" — gets a consistent, honest answer instead of an improvised one.
 
-- **Explainability over sophistication** — judges (and real operators) must be
-  able to see *why* an alert fired. Rule-based/z-score logic is preferred over
-  opaque ML for this build.
-- **Honesty over polish** — simulated data is clearly labeled as simulated;
-  no claim is made that this is production-ready or certified.
-- **Reuse over reinvention** — every layer maps to a previously-built project
-  (InfraGuard, ResQ RoadSOS, Smart Home Dashboard) to reduce build risk.
+## Why threshold/z-score scoring instead of ML
+An ML model (isolation forest, LSTM) sounds more impressive on a slide but has three real costs here: it needs labeled or realistic training data we don't have from an actual mine; it becomes a black box exactly when someone asks "how did you decide this is dangerous," where a rule-based score can be explained field-by-field in one sentence; and it costs build time we don't have in a hackathon window. This is stated as a deliberate v1 choice, with an ML upgrade path noted as future work once real sensor data exists to train on.
 
-## 2. Data Model (MongoDB)
+## Why MQTT instead of sensors calling an HTTP endpoint directly
+HTTP means the backend has to be up and reachable before any sensor can report anything. MQTT decouples that — a broker sits in between, so sensors, the simulation script, and the backend can start in any order and reconnect independently. It's also the protocol family real systems like Trolex and Newtrax use for this kind of telemetry, so it's a legitimate technical parallel, not just a shortcut.
 
-### Collection: `readings`
-```json
-{
-  "zoneId": "zone-1",
-  "sensorType": "vibration | temp | humidity | water | sound | ultrasonic | gas",
-  "value": 0.0,
-  "timestamp": "ISO8601",
-  "isSimulated": false
-}
-```
+## Why MongoDB over a relational database
+Sensor readings are naturally document-shaped — nested vibration x/y/z, and the field set can vary as sensors are added. The main query pattern (recent time-series per zone) matches MongoDB's time-series collections well, and it's a stack we already have experience with, which removes tooling risk from the build.
 
-### Collection: `alerts`
-```json
-{
-  "zoneId": "zone-1",
-  "riskScore": 82,
-  "triggeringSensors": ["vibration", "sound"],
-  "severity": "warning | critical",
-  "timestamp": "ISO8601",
-  "smsSent": true
-}
-```
+## Why simulate zones instead of building more physical nodes
+Cost and time. One real ESP32 node proves the hardware pipeline works end to end; four more physical nodes would cost more, take longer to wire and calibrate, and add failure points on demo day — WiFi range, power, physical damage in transit. A simulation script publishing to the identical MQTT contract proves the software scales to multiple zones without that risk. This is stated plainly to judges rather than implied as five physical units.
 
-### Collection: `zones` (for simulator + dashboard config)
-```json
-{
-  "zoneId": "zone-2",
-  "label": "Simulated Zone B",
-  "isPhysical": false
-}
-```
+## Why Twilio for this demo, SIM800L for the real-deployment story
+Twilio is simpler to demo reliably over venue WiFi. SIM800L — which is already owned and has been used before — is the honest answer for actual underground deployment, where cellular data or WiFi may not reach but a bare GSM signal might. That path is described in the pitch as the real-world approach, not built into this MVP, so the demo doesn't depend on two alert paths working at once under judging conditions.
 
-## 3. Risk Scoring Design
-
-- Each sensor's live value is compared to a rolling baseline (mean, std-dev)
-  computed from recent normal-condition readings.
-- Deviation beyond ~2–3 std-dev → that sensor contributes to the composite
-  risk score.
-- Composite score = weighted sum of contributing sensor deviations
-  (weights: vibration & gas weighted higher than sound/temp, since they are
-  more directly tied to structural/life-safety risk).
-- Thresholds:
-  - Score 0–40 → Normal (green)
-  - Score 41–70 → Warning (yellow) — dashboard flag only
-  - Score 71–100 → Critical (red) — dashboard flag + SMS dispatch
-- **Sensor fusion rule:** a single-sensor spike alone does not reach "critical"
-  tier; at least two independent sensors must agree to cross into critical,
-  to reduce false alarms.
-
-## 4. UI/UX Design (Dashboard)
-
-- **Layout:** glassmorphic cards, dark background (mine/industrial theme),
-  one card per zone
-- **Zone card shows:** zone name, live risk score, color status, last-updated
-  timestamp, physical vs simulated badge
-- **Alert log:** scrollable list, most recent first, shows which sensors
-  triggered each alert
-- **Detail view (per zone):** live line chart of raw sensor values over the
-  last N minutes (helps judges see the actual signal that caused an alert)
-
-## 5. Hardware Layout (Single Combined Board)
-
-All sensors wired to one ESP32 (38-pin) for the MVP — avoids building multiple
-physical nodes and keeps cost near-zero (only gas sensor + buzzer/LED are
-new purchases, ~₹150 total).
-
-| Sensor | Purpose |
-|---|---|
-| MPU6050 | Vibration/tilt |
-| DHT11 | Temp/humidity |
-| Rain sensor | Water ingress (repurposed) |
-| HW-484 | Abnormal sound |
-| Ultrasonic | Roof distance/sagging |
-| MQ-2/MQ-7 (new) | Gas detection |
-| microSD | Offline logging |
-| OLED | Local status |
-| Buzzer + LED (new) | Local audible/visual alarm |
-| SG90 servo | Barrier/vent actuation demo |
-
-## 6. Pitch/Demo Design
-
-- Lead with the working hardware — live shake test triggering a real alert +
-  SMS is the strongest proof point
-- Explicitly state which zones are simulated and why (36-hour hardware
-  constraint, not a shortcut being hidden)
-- Have the exact threshold numbers and reasoning ready for Q&A (see judge
-  Q&A prep notes)
+## Known limitations, stated up front
+- The rolling baseline resets on backend restart — it's in-memory, not persisted
+- No authentication on the dashboard or the demo anomaly-injection endpoint
+- Thresholds are hand-tuned constants, not derived from real mine data
+- SMS is rate-limited to 1 per zone per 5 minutes, which is a demo safety measure as much as a designed feature
