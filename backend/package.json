@@ -1,0 +1,29 @@
+{
+  "name": "resqmine-backend",
+  "version": "1.0.0",
+  "description": "ResQ Mine Backend - MQTT Ingestion, Risk Engine, Socket.io, REST API & Alerts",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node test/riskEngine.test.js"
+  },
+  "keywords": [
+    "resqmine",
+    "safety",
+    "iot",
+    "mqtt",
+    "socketio"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.3.1",
+    "mqtt": "^5.5.2",
+    "socket.io": "^4.7.5",
+    "twilio": "^5.0.4"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "resqmine-workspace",
+  "version": "1.0.0",
+  "description": "ResQ Mine - Underground Safety & Rescue Coordination System (SIH26039)",
+  "scripts": {
+    "test": "npm --prefix backend test",
+    "backend": "npm --prefix backend start",
+    "backend:dev": "npm --prefix backend run dev",
+    "sim": "npm --prefix simulation start",
+    "frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build"
+  },
+  "keywords": [
+    "resqmine",
+    "sih2026",
+    "underground-mine",
+    "safety",
+    "iot",
+    "mqtt"
+  ],
+  "author": "",
+  "license": "ISC"
+}

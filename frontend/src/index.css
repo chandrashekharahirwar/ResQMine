@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #0B1120 0%, #131C2E 100%);
+  color: #F1F5F9;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Tabular figures to prevent layout jitter on live sensor updates */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Glassmorphic card styling per UI-UX.md */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 1rem;
+}
+
+.glass-panel-interactive {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 1rem;
+  transition: all 180ms ease-in-out;
+}
+
+.glass-panel-interactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(91, 141, 247, 0.35);
+  transform: translateY(-2px);
+}
+
+.glass-modal {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(11, 17, 32, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Status colors and soft pulse animations */
+@keyframes soft-pulse-critical {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(245, 72, 77, 0.6)); }
+  50% { opacity: 0.82; filter: drop-shadow(0 0 20px rgba(245, 72, 77, 0.9)); }
+}
+
+.animate-critical-pulse {
+  animation: soft-pulse-critical 1.8s infinite ease-in-out;
+}

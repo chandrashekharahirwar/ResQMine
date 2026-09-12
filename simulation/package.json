@@ -1,0 +1,21 @@
+{
+  "name": "resqmine-simulation",
+  "version": "1.0.0",
+  "description": "ResQ Mine Multi-Zone Telemetry Simulator",
+  "main": "simulator.js",
+  "scripts": {
+    "start": "node simulator.js",
+    "anomaly": "node simulator.js --anomaly"
+  },
+  "keywords": [
+    "resqmine",
+    "simulation",
+    "mqtt"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mqtt": "^5.5.2"
+  }
+}
